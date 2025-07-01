@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
       with:
-        fetch-depth: 0 # Necessary for `npx cap version` if used, and good practice
+        fetch-depth: 0
 
     - name: Set up JDK 11
       uses: actions/setup-java@v3
@@ -25,41 +25,37 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '18' # Specify a Node version, LTS is a good default
+        node-version: '18' # README specifies v14+, 18 is a good LTS choice.
 
-    - name: Install pnpm
-      run: npm install -g pnpm
+    - name: Install Cordova CLI
+      run: npm install -g cordova
 
-    - name: Install dependencies
-      run: pnpm install # Based on the presence of pnpm-lock.yaml
+    - name: Install project dependencies
+      # The README mentions `cd faster-keyboard` then `npm install`.
+      # This implies the package.json might be in a subdirectory.
+      # However, current file listing shows package.json at the root.
+      # Assuming package.json is at the root for now.
+      run: npm install
 
-    - name: Install Capacitor CLI
-      run: npm install -g @capacitor/cli
+    # The README implies `pnpm` is not used, so `npm install` is appropriate.
+    # Also, `pnpm build` is not mentioned; Cordova handles the build.
 
-    - name: Build web assets
-      run: pnpm build # Assuming 'build' is the script name in package.json
+    - name: Add Android platform
+      run: cordova platform add android
 
-    # It's better if the android platform is already added and committed to the repo.
-    # If not, this step would be needed.
-    # - name: Add Android platform
-    #   run: npx cap add android
-
-    - name: Synchronize Capacitor project
-      run: npx cap sync android
-
-    - name: Navigate to Android directory
-      run: cd android
-
-    - name: Grant execute permission for gradlew
-      working-directory: ./android # Run this command in the android directory
-      run: chmod +x gradlew
+    # No separate web asset build step like `npm run build` is mentioned for Cordova in the README.
+    # `cordova build android` handles packaging web assets.
+    # No `npx cap sync android` needed for Cordova.
+    # No `cd android` needed before build for Cordova.
+    # No `chmod +x gradlew` needed before build for Cordova, as `cordova build` handles it.
 
     - name: Build debug APK
-      working-directory: ./android # Run this command in the android directory
-      run: ./gradlew assembleDebug
+      run: cordova build android # This builds the debug APK by default
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: app-debug.apk
-        path: android/app/build/outputs/apk/debug/app-debug.apk
+        # Path from README: platforms/android/app/build/outputs/apk/debug/
+        # Cordova typically names it app-debug.apk
+        path: platforms/android/app/build/outputs/apk/debug/app-debug.apk
