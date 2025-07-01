@@ -31,23 +31,11 @@ jobs:
       run: npm install -g cordova
 
     - name: Install project dependencies
-      # The README mentions `cd faster-keyboard` then `npm install`.
-      # This implies the package.json might be in a subdirectory.
-      # However, current file listing shows package.json at the root.
-      # Assuming package.json is at the root for now.
-      run: npm install
+      run: npm install # package.json is at the root
 
-    # The README implies `pnpm` is not used, so `npm install` is appropriate.
-    # Also, `pnpm build` is not mentioned; Cordova handles the build.
-
+    # Ensure npm install completes and project is initialized before adding platform
     - name: Add Android platform
       run: cordova platform add android
-
-    # No separate web asset build step like `npm run build` is mentioned for Cordova in the README.
-    # `cordova build android` handles packaging web assets.
-    # No `npx cap sync android` needed for Cordova.
-    # No `cd android` needed before build for Cordova.
-    # No `chmod +x gradlew` needed before build for Cordova, as `cordova build` handles it.
 
     - name: Build debug APK
       run: cordova build android # This builds the debug APK by default
