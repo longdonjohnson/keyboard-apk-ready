@@ -25,25 +25,33 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '18' # README specifies v14+, 18 is a good LTS choice.
+        node-version: '18'
+
+    - name: Create project directory and move files
+      run: |
+        mkdir faster-keyboard
+        mv config.xml package.json index.html manifest.json res src public jsconfig.json vite.config.js eslint.config.js components.json pnpm-lock.yaml faster-keyboard/
+        # If other files/dirs are needed by the build (e.g. .gitattributes, .gitignore if they affect cordova) they might need to be moved too.
+        # For now, moving files explicitly mentioned or commonly part of a web frontend project.
+        # pnpm-lock.yaml is moved too, though we'll use npm install as per README.
 
     - name: Install Cordova CLI
       run: npm install -g cordova
 
     - name: Install project dependencies
-      run: npm install # package.json is at the root
+      working-directory: ./faster-keyboard
+      run: npm install # package.json is now in ./faster-keyboard
 
-    # Ensure npm install completes and project is initialized before adding platform
     - name: Add Android platform
+      working-directory: ./faster-keyboard
       run: cordova platform add android
 
     - name: Build debug APK
-      run: cordova build android # This builds the debug APK by default
+      working-directory: ./faster-keyboard
+      run: cordova build android
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: app-debug.apk
-        # Path from README: platforms/android/app/build/outputs/apk/debug/
-        # Cordova typically names it app-debug.apk
-        path: platforms/android/app/build/outputs/apk/debug/app-debug.apk
+        path: faster-keyboard/platforms/android/app/build/outputs/apk/debug/app-debug.apk
