@@ -1,0 +1,36 @@
+{
+  "name": "New Age Faster Keyboard",
+  "short_name": "FasterKeyboard",
+  "description": "Revolutionary two-button gesture-based keyboard for faster typing",
+  "version": "1.0.0",
+  "manifest_version": 3,
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#667eea",
+  "background_color": "#667eea",
+  "scope": "/",
+  "lang": "en",
+  "categories": ["productivity", "utilities"],
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "permissions": [
+    "activeTab"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}
+

@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Age, Faster Keyboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        .keyboard-container {
+            width: 100%;
+            max-width: 400px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .text-input-area {
+            width: 100%;
+            min-height: 120px;
+            padding: 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 15px;
+            font-size: 18px;
+            line-height: 1.5;
+            background: white;
+            margin-bottom: 20px;
+            resize: none;
+            outline: none;
+            font-family: inherit;
+            overflow-y: auto;
+        }
+
+        .character-view-area {
+            position: relative;
+            height: 80px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 15px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .character-display {
+            font-size: 48px;
+            font-weight: bold;
+            color: #667eea;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .character-set-indicator {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 14px;
+            color: #666;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 4px 8px;
+            border-radius: 8px;
+        }
+
+        .controls-container {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .control-button {
+            flex: 1;
+            height: 120px;
+            border: none;
+            border-radius: 15px;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        .left-control {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+        }
+
+        .right-control {
+            background: linear-gradient(135deg, #4ecdc4, #44a08d);
+        }
+
+        .control-button:active {
+            transform: scale(0.95);
+        }
+
+        .control-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.2);
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+
+        .control-button:hover::before {
+            opacity: 1;
+        }
+
+        .status-indicators {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .status-item {
+            padding: 6px 12px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .status-item.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .instructions {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #888;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-20px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .character-display.changing {
+            animation: slideIn 0.3s ease;
+        }
+
+        @media (max-width: 480px) {
+            .keyboard-container {
+                padding: 20px;
+            }
+            
+            .control-button {
+                height: 100px;
+                font-size: 14px;
+            }
+            
+            .character-display {
+                font-size: 36px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="keyboard-container">
+        <textarea class="text-input-area" id="textInput" placeholder="Your text will appear here..." readonly></textarea>
+        
+        <div class="character-view-area">
+            <div class="character-display" id="characterDisplay">a</div>
+            <div class="character-set-indicator" id="setIndicator">abc</div>
+        </div>
+        
+        <div class="controls-container">
+            <button class="control-button left-control" id="leftControl">
+                <div>CHARACTER</div>
+                <div style="font-size: 12px; margin-top: 5px;">Hold + Swipe: Select<br>Tap: Temp Upper<br>Double: Caps Lock</div>
+            </button>
+            <button class="control-button right-control" id="rightControl">
+                <div>ACTIONS</div>
+                <div style="font-size: 12px; margin-top: 5px;">Hold + Swipe: Set<br>Tap: Space<br>Double: Enter<br>Long: Backspace</div>
+            </button>
+        </div>
+        
+        <div class="status-indicators">
+            <div class="status-item" id="tempUpperStatus">Temp Upper</div>
+            <div class="status-item" id="capsLockStatus">Caps Lock</div>
+        </div>
+        
+        <div class="instructions">
+            Hold and swipe vertically on buttons to navigate. Tap for quick actions.
+        </div>
+    </div>
+
+    <script>
+        class FasterKeyboard {
+            constructor() {
+                this.lowercaseSet = ['a', 'e', 'i', 'o', 'u', 't', 'n', 's', 'h', 'r', 'd', 'l', 'c', 'm', 'w', 'f', 'g', 'y', 'p', 'b', 'v', 'k', 'j', 'x', 'q', 'z'];
+                this.uppercaseSet = ['A', 'E', 'I', 'O', 'U', 'T', 'N', 'S', 'H', 'R', 'D', 'L', 'C', 'M', 'W', 'F', 'G', 'Y', 'P', 'B', 'V', 'K', 'J', 'X', 'Q', 'Z'];
+                this.numbersSet = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+                this.symbolsSet = ['.', ',', '!', '?', '\'', '"', '(', ')', '-', ':', ';', '/', '&', '@', '#', '$', '%', '^', '*', '+', '=', '<', '>', '{', '}', '[', ']', '|', '\\', '~', '`'];
+
+                this.characterSets = {
+                    'abc': this.lowercaseSet,
+                    'ABC': this.uppercaseSet,
+                    '123': this.numbersSet,
+                    '#$&': this.symbolsSet
+                };
+
+                this.setNames = Object.keys(this.characterSets);
+                this.activeSetIndex = 0;
+                this.selectedCharIndex = 0;
+                this.tempUppercase = false;
+                this.capsLock = false;
+
+                this.textInput = document.getElementById('textInput');
+                this.characterDisplay = document.getElementById('characterDisplay');
+                this.setIndicator = document.getElementById('setIndicator');
+                this.leftControl = document.getElementById('leftControl');
+                this.rightControl = document.getElementById('rightControl');
+                this.tempUpperStatus = document.getElementById('tempUpperStatus');
+                this.capsLockStatus = document.getElementById('capsLockStatus');
+
+                this.isHolding = false;
+                this.startY = 0;
+                this.lastTapTime = 0;
+                this.tapTimeout = null;
+
+                this.initializeEventListeners();
+                this.updateDisplay();
+            }
+
+            get activeSet() {
+                return this.characterSets[this.setNames[this.activeSetIndex]];
+            }
+
+            get activeSetName() {
+                return this.setNames[this.activeSetIndex];
+            }
+
+            initializeEventListeners() {
+                // Left control button events
+                this.leftControl.addEventListener('touchstart', (e) => this.handleLeftTouchStart(e));
+                this.leftControl.addEventListener('touchmove', (e) => this.handleLeftTouchMove(e));
+                this.leftControl.addEventListener('touchend', (e) => this.handleLeftTouchEnd(e));
+                this.leftControl.addEventListener('mousedown', (e) => this.handleLeftMouseDown(e));
+                this.leftControl.addEventListener('mousemove', (e) => this.handleLeftMouseMove(e));
+                this.leftControl.addEventListener('mouseup', (e) => this.handleLeftMouseUp(e));
+
+                // Right control button events
+                this.rightControl.addEventListener('touchstart', (e) => this.handleRightTouchStart(e));
+                this.rightControl.addEventListener('touchmove', (e) => this.handleRightTouchMove(e));
+                this.rightControl.addEventListener('touchend', (e) => this.handleRightTouchEnd(e));
+                this.rightControl.addEventListener('mousedown', (e) => this.handleRightMouseDown(e));
+                this.rightControl.addEventListener('mousemove', (e) => this.handleRightMouseMove(e));
+                this.rightControl.addEventListener('mouseup', (e) => this.handleRightMouseUp(e));
+
+                // Prevent context menu
+                document.addEventListener('contextmenu', (e) => e.preventDefault());
+            }
+
+            handleLeftTouchStart(e) {
+                e.preventDefault();
+                this.isHolding = true;
+                this.startY = e.touches[0].clientY;
+                this.holdStartTime = Date.now();
+            }
+
+            handleLeftTouchMove(e) {
+                if (!this.isHolding) return;
+                e.preventDefault();
+                
+                const currentY = e.touches[0].clientY;
+                const deltaY = this.startY - currentY;
+                
+                if (Math.abs(deltaY) > 20) {
+                    if (deltaY > 0) {
+                        this.scrollCharacter('up');
+                    } else {
+                        this.scrollCharacter('down');
+                    }
+                    this.startY = currentY;
+                }
+            }
+
+            handleLeftTouchEnd(e) {
+                e.preventDefault();
+                const holdDuration = Date.now() - this.holdStartTime;
+                
+                if (holdDuration > 100) {
+                    this.inputCharacter();
+                } else {
+                    this.handleLeftTap();
+                }
+                
+                this.isHolding = false;
+            }
+
+            handleLeftMouseDown(e) {
+                this.isHolding = true;
+                this.startY = e.clientY;
+                this.holdStartTime = Date.now();
+            }
+
+            handleLeftMouseMove(e) {
+                if (!this.isHolding) return;
+                
+                const currentY = e.clientY;
+                const deltaY = this.startY - currentY;
+                
+                if (Math.abs(deltaY) > 20) {
+                    if (deltaY > 0) {
+                        this.scrollCharacter('up');
+                    } else {
+                        this.scrollCharacter('down');
+                    }
+                    this.startY = currentY;
+                }
+            }
+
+            handleLeftMouseUp(e) {
+                const holdDuration = Date.now() - this.holdStartTime;
+                
+                if (holdDuration > 100) {
+                    this.inputCharacter();
+                } else {
+                    this.handleLeftTap();
+                }
+                
+                this.isHolding = false;
+            }
+
+            handleLeftTap() {
+                const now = Date.now();
+                if (now - this.lastTapTime < 300) {
+                    // Double tap
+                    clearTimeout(this.tapTimeout);
+                    this.toggleCapsLock();
+                    this.lastTapTime = 0; // Reset to prevent triple tap issues
+                } else {
+                    // Single tap
+                    this.tapTimeout = setTimeout(() => {
+                        this.toggleTempUppercase();
+                    }, 300);
+                    this.lastTapTime = now;
+                }
+            }
+
+            handleRightTouchStart(e) {
+                e.preventDefault();
+                this.isHolding = true;
+                this.startY = e.touches[0].clientY;
+                this.holdStartTime = Date.now();
+            }
+
+            handleRightTouchMove(e) {
+                if (!this.isHolding) return;
+                e.preventDefault();
+                
+                const currentY = e.touches[0].clientY;
+                const deltaY = this.startY - currentY;
+                
+                if (Math.abs(deltaY) > 20) {
+                    if (deltaY > 0) {
+                        this.scrollCharacterSet('up');
+                    } else {
+                        this.scrollCharacterSet('down');
+                    }
+                    this.startY = currentY;
+                }
+            }
+
+            handleRightTouchEnd(e) {
+                e.preventDefault();
+                const holdDuration = Date.now() - this.holdStartTime;
+                
+                if (holdDuration > 500) {
+                    this.backspace();
+                } else if (holdDuration < 100) {
+                    this.handleRightTap();
+                }
+                
+                this.isHolding = false;
+            }
+
+            handleRightMouseDown(e) {
+                this.isHolding = true;
+                this.startY = e.clientY;
+                this.holdStartTime = Date.now();
+            }
+
+            handleRightMouseMove(e) {
+                if (!this.isHolding) return;
+                
+                const currentY = e.clientY;
+                const deltaY = this.startY - currentY;
+                
+                if (Math.abs(deltaY) > 20) {
+                    if (deltaY > 0) {
+                        this.scrollCharacterSet('up');
+                    } else {
+                        this.scrollCharacterSet('down');
+                    }
+                    this.startY = currentY;
+                }
+            }
+
+            handleRightMouseUp(e) {
+                const holdDuration = Date.now() - this.holdStartTime;
+                
+                if (holdDuration > 500) {
+                    this.backspace();
+                } else if (holdDuration < 100) {
+                    this.handleRightTap();
+                }
+                
+                this.isHolding = false;
+            }
+
+            handleRightTap() {
+                const now = Date.now();
+                if (now - this.lastTapTime < 300) {
+                    // Double tap
+                    clearTimeout(this.tapTimeout);
+                    this.insertEnter();
+                    this.lastTapTime = 0; // Reset to prevent triple tap issues
+                } else {
+                    // Single tap
+                    this.tapTimeout = setTimeout(() => {
+                        this.insertSpace();
+                    }, 300);
+                    this.lastTapTime = now;
+                }
+            }
+
+            scrollCharacter(direction) {
+                if (direction === 'up') {
+                    this.selectedCharIndex = (this.selectedCharIndex - 1 + this.activeSet.length) % this.activeSet.length;
+                } else {
+                    this.selectedCharIndex = (this.selectedCharIndex + 1) % this.activeSet.length;
+                }
+                this.updateDisplay();
+            }
+
+            scrollCharacterSet(direction) {
+                if (direction === 'up') {
+                    this.activeSetIndex = (this.activeSetIndex - 1 + this.setNames.length) % this.setNames.length;
+                } else {
+                    this.activeSetIndex = (this.activeSetIndex + 1) % this.setNames.length;
+                }
+                this.selectedCharIndex = 0;
+                this.updateDisplay();
+            }
+
+            inputCharacter() {
+                let char = this.activeSet[this.selectedCharIndex];
+                
+                if (this.tempUppercase || this.capsLock) {
+                    char = char.toUpperCase();
+                }
+                
+                if (this.tempUppercase) {
+                    this.tempUppercase = false;
+                    this.updateStatusIndicators();
+                }
+                
+                this.textInput.value += char;
+            }
+
+            insertSpace() {
+                this.textInput.value += ' ';
+            }
+
+            insertEnter() {
+                this.textInput.value += '\n';
+            }
+
+            backspace() {
+                this.textInput.value = this.textInput.value.slice(0, -1);
+            }
+
+            toggleTempUppercase() {
+                if (!this.capsLock) {
+                    this.tempUppercase = !this.tempUppercase;
+                    this.updateStatusIndicators();
+                }
+            }
+
+            toggleCapsLock() {
+                this.capsLock = !this.capsLock;
+                this.tempUppercase = false;
+                this.updateStatusIndicators();
+            }
+
+            updateDisplay() {
+                this.characterDisplay.textContent = this.activeSet[this.selectedCharIndex];
+                this.characterDisplay.classList.add('changing');
+                setTimeout(() => {
+                    this.characterDisplay.classList.remove('changing');
+                }, 300);
+                
+                this.setIndicator.textContent = this.activeSetName;
+            }
+
+            updateStatusIndicators() {
+                this.tempUpperStatus.classList.toggle('active', this.tempUppercase);
+                this.capsLockStatus.classList.toggle('active', this.capsLock);
+            }
+        }
+
+        // Initialize the keyboard when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new FasterKeyboard();
+        });
+    </script>
+</body>
+</html>
+
