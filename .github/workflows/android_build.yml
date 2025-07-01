@@ -1,0 +1,57 @@
+name: Android CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Create project directory and move files
+      run: |
+        mkdir faster-keyboard
+        mv config.xml package.json index.html manifest.json res src public jsconfig.json vite.config.js eslint.config.js components.json pnpm-lock.yaml faster-keyboard/
+        # If other files/dirs are needed by the build (e.g. .gitattributes, .gitignore if they affect cordova) they might need to be moved too.
+        # For now, moving files explicitly mentioned or commonly part of a web frontend project.
+        # pnpm-lock.yaml is moved too, though we'll use npm install as per README.
+
+    - name: Install Cordova CLI
+      run: npm install -g cordova
+
+    - name: Install project dependencies
+      working-directory: ./faster-keyboard
+      run: npm install # package.json is now in ./faster-keyboard
+
+    - name: Add Android platform
+      working-directory: ./faster-keyboard
+      run: cordova platform add android
+
+    - name: Build debug APK
+      working-directory: ./faster-keyboard
+      run: cordova build android
+
+    - name: Upload APK
+      uses: actions/upload-artifact@v4
+      with:
+        name: app-debug.apk
+        path: faster-keyboard/platforms/android/app/build/outputs/apk/debug/app-debug.apk
